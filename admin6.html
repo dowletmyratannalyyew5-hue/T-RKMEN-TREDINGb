@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+</style>
+</head>
+<body>
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+</style>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Türkmen Trading · Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0a0406;
+  --panel: rgba(28, 8, 14, 0.92);
+  --line: rgba(255, 45, 74, 0.28);
+  --tx: #fff5f7;
+  --mut: #b89aa3;
+  --accent: #ff2d4a;
+  --accent2: #b3122b;
+  --gold: #e8b84a;
+  --ok: #10b981;
+  --danger: #ef4444;
+  --radius: 18px;
+  color-scheme: dark;
+}
+body.light {
+  --bg: #f8f1f3;
+  --panel: rgba(255, 255, 255, 0.95);
+  --line: rgba(179, 18, 43, 0.25);
+  --tx: #1a050a;
+  --mut: #6b4a52;
+  --accent: #c41e3a;
+  --accent2: #8b1226;
+  --gold: #b8860b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% -20%, #4a0c1a 0%, #170408 55%, var(--bg) 100%);
+  color: var(--tx);
+  font: 15px 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+button {
+  font: inherit; color: inherit; border: 0; cursor: pointer;
+  border-radius: 14px; transition: all .22s cubic-bezier(.16,1,.3,1);
+}
+button:active { transform: scale(0.96); }
+button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+input, select, textarea {
+  font: inherit; color: var(--tx);
+  background: rgba(10, 3, 5, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 14px; padding: 13px 15px; width: 100%;
+  outline: none; transition: border-color .25s, box-shadow .25s;
+}
+body.light input, body.light select, body.light textarea {
+  background: #fff; border-color: rgba(179,18,43,0.3);
+}
+input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(255,45,74,0.25); }
+textarea { resize: vertical; min-height: 90px; }
+.hide { display: none !important; }
+
+/* LOGIN */
+#loginScreen {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 30%, #3a0a14 0%, #0a0406 100%);
+  padding: 20px;
+}
+.login-box {
+  width: 100%; max-width: 400px;
+  background: linear-gradient(165deg, rgba(40,10,18,0.97), rgba(14,4,8,0.99));
+  border: 1.5px solid rgba(255,45,74,0.45);
+  border-radius: 28px; padding: 36px 28px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 40px rgba(255,45,74,0.2);
+  text-align: center;
+  animation: loginBoxIn 0.7s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes loginBoxIn {
+  from { opacity: 0; transform: translateY(40px) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.login-logo {
+  width: 72px; height: 72px; margin: 0 auto 18px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 22px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 35px rgba(255,45,74,0.6);
+  font-size: 32px;
+  animation: logoPulse 2.5s ease-in-out infinite;
+}
+@keyframes logoPulse {
+  0%, 100% { box-shadow: 0 0 25px rgba(255,45,74,0.5); transform: scale(1); }
+  50% { box-shadow: 0 0 45px rgba(255,45,74,0.85); transform: scale(1.04); }
+}
+.login-box h1 {
+  font-size: 22px; font-weight: 900; margin-bottom: 6px;
+  background: linear-gradient(90deg,#fff,#fca5a5);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.login-box p { color: var(--mut); font-size: 14px; margin-bottom: 22px; }
+
+.code-wrap {
+  position: relative; margin-bottom: 16px;
+}
+.code-wrap input {
+  text-align: center; font-size: 20px; font-weight: 800;
+  letter-spacing: 6px; padding: 16px;
+  background: rgba(8,2,4,0.95);
+  border: 2px solid rgba(255,45,74,0.35);
+  transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.code-wrap input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 30px rgba(232,184,74,0.35), inset 0 0 20px rgba(255,45,74,0.1);
+  letter-spacing: 8px;
+}
+.code-wrap::after {
+  content: '';
+  position: absolute; bottom: 0; left: 50%; width: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+  border-radius: 3px; transition: all 0.4s ease;
+  transform: translateX(-50%);
+}
+.code-wrap:focus-within::after { width: 80%; }
+
+.login-btn {
+  width: 100%; padding: 15px; font-weight: 900; font-size: 16px;
+  background: linear-gradient(135deg, #ff2d4a, #b3122b);
+  color: #fff; border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(255,45,74,0.4);
+  position: relative; overflow: hidden;
+}
+.login-btn::before {
+  content: '';
+  position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transition: left 0.5s;
+}
+.login-btn:hover::before { left: 100%; }
+
+.support-popup-alert {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(153, 27, 27, 0.4));
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  border-radius: 14px;
+  color: #fca5a5;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  animation: popupBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popupBounce {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.login-err { color: #f87171; font-size: 13px; min-height: 18px; margin-top: 10px; font-weight: 700; }
+
+#app { display: none; min-height: 100vh; }
+#app.active { display: block; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; gap: 12px;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(16px);
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.menu-btn {
+  width: 44px; height: 44px; background: rgba(50,14,23,0.8);
+  border: 1px solid var(--line); font-size: 22px; border-radius: 12px;
+}
+.topbar b {
+  font-size: 18px; font-weight: 900;
+  background: linear-gradient(135deg,#fff,#ffccd5,var(--accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.live-pill {
+  font-size: 11px; font-weight: 800; color: var(--ok);
+  background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4);
+  padding: 4px 11px; border-radius: 99px;
+}
+
+.overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(8,2,4,0.75); backdrop-filter: blur(6px);
+  opacity: 0; visibility: hidden; transition: all .3s;
+}
+.overlay.open { opacity: 1; visibility: visible; }
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: min(86%, 320px);
+  background: linear-gradient(180deg, #1f060d 0%, #0a0406 100%);
+  border-right: 1px solid rgba(255,45,74,0.3);
+  padding: 20px 16px; overflow-y: auto; z-index: 70;
+  transform: translateX(-100%); transition: transform .35s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 20px 0 50px rgba(0,0,0,0.8);
+}
+.overlay.open .sidebar { transform: translateX(0); }
+body.light .sidebar { background: linear-gradient(180deg, #fff 0%, #f8f1f3 100%); }
+.side-close {
+  width: 100%; padding: 12px; margin-bottom: 18px;
+  background: rgba(50,14,23,0.7); border: 1px solid var(--line);
+  color: #fca5a5; font-weight: 700;
+}
+.side-title { font-size: 13px; font-weight: 800; color: var(--gold); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+.lang-btn, .theme-btn {
+  width: 100%; padding: 12px 14px; margin-bottom: 6px;
+  background: rgba(40,10,16,0.8); border: 1px solid transparent;
+  text-align: left; font-weight: 700; border-radius: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.lang-btn.active, .theme-btn.active {
+  background: rgba(255,45,74,0.2); border-color: var(--accent); color: var(--gold);
+}
+
+.content { max-width: 720px; margin: 0 auto; padding: 16px 14px 50px; }
+
+.window {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.window-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px;
+  background: linear-gradient(90deg, rgba(255,45,74,0.12), rgba(232,184,74,0.08));
+  border-bottom: 1px solid var(--line);
+  font-weight: 800; font-size: 15px; color: #fca5a5;
+}
+.window-body { padding: 16px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.grid4-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
+.grid4-tabs button {
+  padding: 10px 4px; font-size: 12px; font-weight: 800;
+  background: rgba(50,14,23,0.8); border: 1px solid var(--line);
+  color: var(--mut); text-align: center; border-radius: 12px;
+}
+.grid4-tabs button.active {
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-color: #fca5a5; color: #fff; box-shadow: 0 4px 15px rgba(255,45,74,0.4);
+}
+
+.stat-box {
+  background: linear-gradient(145deg, rgba(30,8,14,0.9), rgba(12,3,6,0.95));
+  border: 1px solid rgba(255,45,74,0.25); border-radius: 14px;
+  padding: 12px; text-align: center;
+}
+.stat-box span { display: block; font-size: 11px; color: var(--mut); font-weight: 700; margin-bottom: 4px; }
+.stat-box b { font-size: 17px; font-weight: 900; }
+
+.id-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.id-row input { flex: 1; font-weight: 800; letter-spacing: 1px; }
+
+.amount-row { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+.amount-row input { text-align: center; font-size: 22px; font-weight: 900; color: var(--gold); }
+.amt-btn {
+  width: 52px; height: 52px; font-size: 24px; font-weight: 800;
+  background: rgba(50,14,23,0.85); border: 1px solid var(--line);
+}
+.plus-btn { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+.minus-btn { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; }
+
+.action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.btn-main {
+  padding: 13px; font-weight: 900; font-size: 14px;
+  background: linear-gradient(135deg, #ff2d4a, #b3122b); color: #fff;
+  box-shadow: 0 6px 18px rgba(255,45,74,0.3);
+}
+.btn-ghost {
+  padding: 13px; font-weight: 700;
+  background: rgba(50,14,23,0.8); border: 1px solid var(--line);
+}
+.btn-block {
+  background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(153,27,27,0.5));
+  border: 1px solid rgba(239,68,68,0.6); color: #fca5a5; font-weight: 800;
+}
+.btn-temp {
+  background: linear-gradient(135deg, rgba(232,184,74,0.2), rgba(180,120,20,0.4));
+  border: 1px solid rgba(232,184,74,0.55); color: var(--gold); font-weight: 800;
+}
+.btn-unblock {
+  background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.4));
+  border: 1px solid rgba(16,185,129,0.5); color: #6ee7b7; font-weight: 800;
+}
+
+.av-big {
+  width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2)) center/cover;
+  border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center;
+  font-size: 34px; box-shadow: 0 0 22px rgba(232,184,74,0.4);
+}
+.kv { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,45,74,0.12); font-size: 13.5px; }
+.kv:last-child { border-bottom: none; }
+.kv span { color: var(--mut); font-weight: 600; }
+
+.list-box { max-height: 240px; overflow-y: auto; }
+.list-item {
+  background: rgba(30,8,14,0.7); border: 1px solid rgba(255,45,74,0.18);
+  border-radius: 12px; padding: 11px 13px; margin-bottom: 7px;
+  font-size: 13px; cursor: pointer; transition: all .2s;
+}
+.list-item:hover { border-color: var(--accent); background: rgba(255,45,74,0.1); }
+.list-item b { color: var(--gold); }
+.list-time { font-size: 11px; color: var(--mut); margin-top: 3px; }
+
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 200; min-width: 260px; max-width: 90%;
+  background: linear-gradient(135deg, #4a0c1a, #1f060d);
+  border: 2px solid var(--gold); border-radius: 14px; padding: 14px 18px;
+  text-align: center; font-weight: 700; font-size: 14px;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.8); animation: toastIn .3s ease;
+}
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%,-20px); } to { opacity: 1; transform: translate(-50%,0); } }
+.loading-overlay {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(7,2,4,0.88); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  opacity: 0; visibility: hidden; transition: all .3s;
+}
+.loading-overlay.show { opacity: 1; visibility: visible; }
+.spinner {
+  width: 48px; height: 48px; border: 3px solid rgba(255,45,74,0.2);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.footer-note { text-align: center; font-size: 11px; color: var(--mut); margin-top: 18px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">⚙</div>
+    <h1>ADMIN PANEL</h1>
+    <p>Türkmen Trading · Dolandyryş</p>
+    <div class="code-wrap">
+      <input type="password" id="adminCode" placeholder="••••••••" autocomplete="off" maxlength="20">
+    </div>
+    <button class="login-btn" id="loginBtn">Giriş</button>
+    <div class="login-err" id="loginErr"></div>
+    <div id="supportAlertContainer"></div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="font-weight:800;color:#fca5a5;">Ýüklenýär...</div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <b>Türkmen Trading Admin</b>
+    </div>
+    <span class="live-pill">● LIVE</span>
+  </div>
+
+  <div class="overlay" id="sideOverlay">
+    <div class="sidebar">
+      <button class="side-close" id="closeMenu">Ýap ✕</button>
+      <div class="side-title">Dili saýlaň</div>
+      <button class="lang-btn active" data-lang="tk">🇹🇲 Türkmen dili</button>
+      <button class="lang-btn" data-lang="tr">🇹🇷 Türkçe</button>
+      <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+      <button class="lang-btn" data-lang="ru">🇷🇺 Русский</button>
+      <button class="lang-btn" data-lang="uz">🇺🇿 Oʻzbekcha</button>
+      <div class="side-title">Tema</div>
+      <button class="theme-btn active" data-theme="dark">🔴 Gyzyl Tema</button>
+      <button class="theme-btn" data-theme="light">⚪ Ak Tema</button>
+      <div class="side-title">Goşmaça</div>
+      <button class="lang-btn" id="btnRefreshAll">🔄 Ähli maglumatlary täzele</button>
+      <button class="lang-btn" id="btnClearNotifs">🗑 Habarlary arassala</button>
+      <button class="lang-btn" id="btnExport">📥 Maglumatlary çykar</button>
+      <button class="lang-btn" id="btnLogout" style="color:#fca5a5;margin-top:10px;">🚪 Çykmak</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="window">
+      <div class="window-header">📊 Statistika</div>
+      <div class="window-body">
+        <div class="grid3">
+          <div class="stat-box"><span>Jemi ulanyjy</span><b id="statUsers">0</b></div>
+          <div class="stat-box"><span>Jemi balans</span><b id="statBal">0</b></div>
+          <div class="stat-box"><span>Bloklanan</span><b id="statBlocked">0</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window">
+      <div class="window-header">🔎 Esasy 4 Sany Gözegçilik Penjiresi</div>
+      <div class="window-body">
+        <div class="grid4-tabs">
+          <button class="active" data-tab="tab1">1. Belli</button>
+          <button data-tab="tab2">2. Profil</button>
+          <button data-tab="tab3">3. Girişler</button>
+          <button data-tab="tab4">4. Ýitgi/Girdeýji</button>
+        </div>
+
+        <div class="tab-content" id="content-tab1">
+          <div style="font-size:13px;color:var(--mut);margin-bottom:8px;font-weight:700;">Belli ulanyjy gözlegi we çalt maglumat:</div>
+          <div class="id-row" style="margin-bottom:0;">
+            <input id="tab1Input" placeholder="ID ýazyň (mysal: ID621416)">
+            <button class="btn-ghost" id="tab1SearchBtn" style="width:auto;padding:0 14px;">Bellik</button>
+          </div>
+          <div id="tab1Result" style="margin-top:10px;font-size:13px;font-weight:600;color:var(--gold);"></div>
+        </div>
+
+        <div class="tab-content hide" id="content-tab2">
+          <div style="font-size:13px;color:var(--mut);margin-bottom:8px;font-weight:700;">Hemme ulanyjynyň şahsy maglumatlary:</div>
+          <div class="id-row">
+            <input id="tab2Input" placeholder="Ulanyjy ID ýazyň (mysal: ID621416)">
+            <button class="btn-ghost" id="tab2SearchBtn" style="width:auto;padding:0 14px;">Görkez</button>
+          </div>
+          <div id="tab2ProfileView" style="background:rgba(0,0,0,0.3);padding:12px;border-radius:12px;font-size:13px;margin-top:6px;">
+            <div style="color:var(--mut);text-align:center;">ID ýazyň ýa-da saýlaň</div>
+          </div>
+        </div>
+
+        <div class="tab-content hide" id="content-tab3">
+          <div style="font-size:13px;color:var(--mut);margin-bottom:8px;font-weight:700;">Oýunçylaryň hemme giriş we çykyş aktiwlikleri:</div>
+          <div class="list-box" id="tab3ActivityList" style="max-height:180px;">
+            <div style="text-align:center;color:var(--mut);padding:10px;">Häzirlikçe giriş ýazgysy ýok</div>
+          </div>
+        </div>
+
+        <div class="tab-content hide" id="content-tab4">
+          <div style="font-size:13px;color:var(--mut);margin-bottom:8px;font-weight:700;">Her bir ulanyjynyň ýitiren pullary we gazanan girdeýjileri:</div>
+          <div class="list-box" id="tab4FinancialList" style="max-height:180px;">
+            <div style="text-align:center;color:var(--mut);padding:10px;">Maglumat ýüklenýär...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="window">
+      <div class="window-header">💰 Balans & Blok / Wagtlaýyn Ban</div>
+      <div class="window-body">
+        <div class="id-row">
+          <input id="userIdInput" placeholder="Ulanyjy ID (mysal: ID621416)" maxlength="20">
+          <button class="btn-ghost" id="btnSearch" style="width:auto;padding:0 16px;">Gözle</button>
+        </div>
+
+        <div class="amount-row">
+          <button class="amt-btn minus-btn" id="btnMinus">−</button>
+          <input type="number" id="amountInput" value="50" min="1" step="1">
+          <button class="amt-btn plus-btn" id="btnPlus">+</button>
+        </div>
+
+        <div class="action-btns">
+          <button class="btn-main" id="btnDeposit">+ Goşmak</button>
+          <button class="btn-main" id="btnWithdraw" style="background:linear-gradient(135deg,#ef4444,#b91c1c);">− Çykarmak</button>
+        </div>
+
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
+          <div style="font-size:13px;font-weight:700;color:var(--mut);margin-bottom:8px;">Wagtlaýyn ban wagty (sagat)</div>
+          <div class="id-row">
+            <select id="banHours" style="flex:1;">
+              <option value="1">1 sagat</option>
+              <option value="6">6 sagat</option>
+              <option value="12">12 sagat</option>
+              <option value="24" selected>24 sagat</option>
+              <option value="72">3 gün</option>
+              <option value="168">7 gün</option>
+              <option value="0">Hemişelik blok</option>
+            </select>
+          </div>
+          <div class="action-btns">
+            <button class="btn-temp" id="btnTempBan">⏱ Wagtlaýyn Ban</button>
+            <button class="btn-block" id="btnBlock">🚫 Hemişelik Blok</button>
+          </div>
+          <button class="btn-unblock" id="btnUnblock" style="width:100%;margin-top:8px;padding:13px;">✅ Bany / Bloky aýyrmak</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="window" id="profileWindow" style="display:none;">
+      <div class="window-header">👤 Ulanyjy Profili</div>
+      <div class="window-body">
+        <div class="av-big" id="userAv">👤</div>
+        <div style="text-align:center;font-weight:800;font-size:17px;margin-bottom:12px;" id="userName">—</div>
+        <div class="kv"><span>ID</span><b id="pId">—</b></div>
+        <div class="kv"><span>Telefon</span><b id="pPhone">—</b></div>
+        <div class="kv"><span>Welaýat</span><b id="pRegion">—</b></div>
+        <div class="kv"><span>Balans</span><b id="pBal" style="color:var(--gold);">—</b></div>
+        <div class="kv"><span>Oýunlar</span><b id="pGames">—</b></div>
+        <div class="kv"><span>Ýeňişler</span><b id="pWins">—</b></div>
+        <div class="kv"><span>Ýagdaý</span><b id="pStatus">—</b></div>
+        <div class="kv"><span>Ban gutarýan wagty</span><b id="pBanUntil">—</b></div>
+      </div>
+    </div>
+
+    <div class="window">
+      <div class="window-header">📢 Ähli ulanyjylara bildirim</div>
+      <div class="window-body">
+        <textarea id="broadcastText" placeholder="Bildirim tekstini ýazyň..."></textarea>
+        <button class="btn-main" id="btnBroadcast" style="width:100%;margin-top:12px;">Ugratmak (5 sek görüner)</button>
+        <div style="font-size:12px;color:var(--mut);margin-top:8px;line-height:1.4;">
+          Bildirim trading programma girilende depesinden 5 sekundlap çykyp durar.
+        </div>
+      </div>
+    </div>
+
+    <div class="window">
+      <div class="window-header">📋 Giriş / Çykyş / Pozulan hasaplar</div>
+      <div class="window-body">
+        <div class="list-box" id="activityList">
+          <div style="text-align:center;color:var(--mut);padding:16px;">Häzirlikçe ýazgy ýok</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window">
+      <div class="window-header">🔔 Soňky admin habarlary</div>
+      <div class="window-body">
+        <div class="list-box" id="notifList">
+          <div style="text-align:center;color:var(--mut);padding:16px;">Häzirlikçe habar ýok</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Türkmen Trading Admin Panel · Diňe ygtyýarly ulanyjylar üçin<br>
+      Ähli hereketler ýazga alynýar
+    </div>
+  </div>
+</div>
+
+<script>
+// Täze Supabase URL we API Key (trading programmanyňky bilen doly laýyklaşdyryldy)
+const SUPABASE_URL = "https://uotuvxxhirfbfpzplyxx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_jDnd0jSWyV_hBVoa_YsKNA_OP5VtumI";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ADMIN_CODE = "DÖWLETMYRAT";
+const $ = s => document.querySelector(s);
+const r2 = n => Math.round(n * 100) / 100;
+
+let currentUser = null;
+let notifLog = JSON.parse(localStorage.getItem('admin_notifs') || '[]');
+let activityLog = JSON.parse(localStorage.getItem('admin_activity') || '[]');
+let bannedUsers = JSON.parse(localStorage.getItem('admin_banned') || '{}');
+let currentLang = localStorage.getItem('admin_lang') || 'tk';
+
+$('#loginBtn').onclick = () => {
+  const code = $('#adminCode').value.trim();
+  if (code === ADMIN_CODE) {
+    $('#loginScreen').style.display = 'none';
+    $('#app').classList.add('active');
+    loadStats();
+    renderNotifs();
+    renderActivity();
+    loadFinancialAndProfiles();
+    startPolling();
+  } else {
+    $('#loginErr').textContent = 'Nädogry kod!';
+    $('#adminCode').value = '';
+    $('#adminCode').style.animation = 'none';
+    setTimeout(() => {
+      $('#adminCode').style.animation = 'shake 0.4s ease';
+    }, 10);
+    
+    const alertBox = $('#supportAlertContainer');
+    alertBox.innerHTML = `
+      <div class="support-popup-alert">
+        ⚠️ Ýalňyş kod girizildi!<br>
+        <b>Support-dan kody doly we dogry alyň!</b><br>
+        <span style="font-size:11px;color:#ffd1dc;">Telegram: Gugo | Start: MYRAT78✞︎</span>
+      </div>
+    `;
+  }
+};
+$('#adminCode').onkeydown = e => { if (e.key === 'Enter') $('#loginBtn').click(); };
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}`;
+document.head.appendChild(styleSheet);
+
+document.querySelectorAll('.grid4-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.grid4-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hide'));
+    $('#content-' + tab).classList.remove('hide');
+  };
+});
+
+function formatSearchId(rawId) {
+  if (!rawId) return '';
+  let cleanId = rawId.trim().toUpperCase();
+  if (!cleanId.startsWith('ID')) {
+    cleanId = 'ID' + cleanId;
+  }
+  return cleanId;
+}
+
+$('#tab1SearchBtn').onclick = async () => {
+  const id = formatSearchId($('#tab1Input').value);
+  if(!id) return;
+  const { data } = await supabaseClient.from('users').select('*').eq('id', id).single();
+  if(data) {
+    $('#tab1Result').textContent = 'Ulanyjy tapyldy: ' + (data.name || 'Adsyz') + ' | Balans: ' + data.balance + ' TMT | Welaýat: ' + data.region;
+  } else {
+    $('#tab1Result').textContent = 'Ulanyjy tapylmady!';
+  }
+};
+
+$('#tab2SearchBtn').onclick = async () => {
+  const id = formatSearchId($('#tab2Input').value);
+  if(!id) return;
+  const { data } = await supabaseClient.from('users').select('*').eq('id', id).single();
+  const box = $('#tab2ProfileView');
+  if(data) {
+    box.innerHTML = '<div><b>ID:</b> ' + data.id + '</div>' +
+                    '<div><b>Ady:</b> ' + (data.name || 'Görkezilmedik') + '</div>' +
+                    '<div><b>Telefon:</b> +993 ' + (data.phone || '---') + '</div>' +
+                    '<div><b>Welaýat:</b> ' + (data.region || '---') + '</div>' +
+                    '<div><b>Balans:</b> ' + data.balance + ' TMT</div>' +
+                    '<div><b>Jemi oýun:</b> ' + (data.games || 0) + '</div>';
+  } else {
+    box.innerHTML = '<div style="color:#ef4444;">Ulanyjy tapylmady</div>';
+  }
+};
+
+async function loadFinancialAndProfiles() {
+  try {
+    const { data } = await supabaseClient.from('users').select('*');
+    if(!data) return;
+
+    const t3List = $('#tab3ActivityList');
+    t3List.innerHTML = data.map(u => 
+      '<div class="list-item"><b>' + u.id + ' (' + (u.name || 'Adsyz') + ')</b> - +993 ' + u.phone + '<div class="list-time">Welaýat: ' + (u.region || '---') + ' | Balans: ' + u.balance + ' TMT</div></div>'
+    ).join('');
+
+    const t4List = $('#tab4FinancialList');
+    t4List.innerHTML = data.map(u => {
+      const estimatedIncome = r2((u.wins || 0) * 15);
+      const estimatedLoss = r2((Math.max(0, (u.games || 0) - (u.wins || 0))) * 12);
+      return '<div class="list-item"><b>' + u.id + ' (' + (u.name || 'Adsyz') + ')</b>' +
+             '<div class="list-time" style="color:var(--ok);">Gazanç/Girdeýji: +' + estimatedIncome + ' TMT</div>' +
+             '<div class="list-time" style="color:var(--danger);">Çak edilýän ýitgi: -' + estimatedLoss + ' TMT (Oýun: ' + (u.games || 0) + ')</div></div>';
+    }).join('');
+  } catch(e) {}
+}
+
+$('#menuBtn').onclick = () => $('#sideOverlay').classList.add('open');
+$('#closeMenu').onclick = () => $('#sideOverlay').classList.remove('open');
+$('#sideOverlay').onclick = e => { if (e.target === $('#sideOverlay')) $('#sideOverlay').classList.remove('open'); };
+
+document.querySelectorAll('.lang-btn[data-lang]').forEach(btn => {
+  btn.onclick = () => {
+    currentLang = btn.dataset.lang;
+    localStorage.setItem('admin_lang', currentLang);
+    document.querySelectorAll('.lang-btn[data-lang]').forEach(b => b.classList.toggle('active', b === btn));
+    $('#sideOverlay').classList.remove('open');
+  };
+});
+document.querySelectorAll('.theme-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (btn.dataset.theme === 'light') document.body.classList.add('light');
+    else document.body.classList.remove('light');
+    localStorage.setItem('admin_theme', btn.dataset.theme);
+  };
+});
+if (localStorage.getItem('admin_theme') === 'light') {
+  document.body.classList.add('light');
+  document.querySelector('.theme-btn[data-theme="light"]').classList.add('active');
+  document.querySelector('.theme-btn[data-theme="dark"]').classList.remove('active');
+}
+
+function toast(msg, isError = false) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  if (isError) el.style.borderColor = '#ef4444';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+function isBanned(id) {
+  const until = bannedUsers[id];
+  if (until === undefined) return false;
+  if (until === 0) return true;
+  if (Date.now() < until) return true;
+  delete bannedUsers[id];
+  localStorage.setItem('admin_banned', JSON.stringify(bannedUsers));
+  return false;
+}
+
+function getBanStatus(id) {
+  const until = bannedUsers[id];
+  if (until === undefined) return { banned: false, text: 'Işjeň' };
+  if (until === 0) return { banned: true, text: 'Hemişelik blok', untilText: '—' };
+  if (Date.now() < until) {
+    return { banned: true, text: 'Wagtlaýyn ban', untilText: new Date(until).toLocaleString('tk-TM') };
+  }
+  delete bannedUsers[id];
+  localStorage.setItem('admin_banned', JSON.stringify(bannedUsers));
+  return { banned: false, text: 'Işjeň', untilText: '—' };
+}
+
+async function searchUser(rawId) {
+  const id = formatSearchId(rawId);
+  if (!id) return null;
+  $('#loading').classList.add('show');
+  try {
+    const { data, error } = await supabaseClient.from('users').select('*').eq('id', id).single();
+    $('#loading').classList.remove('show');
+    if (error || !data) {
+      toast('Ulanyjy tapylmady!', true);
+      $('#profileWindow').style.display = 'none';
+      currentUser = null;
+      return null;
+    }
+    currentUser = data;
+    showProfile(data);
+    return data;
+  } catch (e) {
+    $('#loading').classList.remove('show');
+    toast('Ulanyjy tapylmady!', true);
+    return null;
+  }
+}
+
+function showProfile(u) {
+  $('#pId').textContent = u.id || '—';
+  $('#pPhone').textContent = u.phone ? '+993 ' + u.phone : '—';
+  $('#pRegion').textContent = u.region || '—';
+  $('#pBal').textContent = r2(u.balance || 0).toFixed(2) + ' TMT';
+  $('#pGames').textContent = u.games || 0;
+  $('#pWins').textContent = u.wins || 0;
+  $('#userName').textContent = u.name || 'Adsyz';
+  const st = getBanStatus(u.id);
+  $('#pStatus').textContent = st.text;
+  $('#pStatus').style.color = st.banned ? '#ef4444' : '#10b981';
+  $('#pBanUntil').textContent = st.untilText || '—';
+  $('#profileWindow').style.display = 'block';
+}
+
+$('#btnSearch').onclick = () => {
+  const id = $('#userIdInput').value.trim();
+  if (id) searchUser(id);
+};
+
+$('#btnPlus').onclick = () => {
+  let v = Math.max(1, (+$('#amountInput').value || 0) + 10);
+  $('#amountInput').value = v;
+};
+$('#btnMinus').onclick = () => {
+  let v = Math.max(1, (+$('#amountInput').value || 0) - 10);
+  $('#amountInput').value = v;
+};
+
+async function changeBalance(isDeposit) {
+  const rawId = $('#userIdInput').value.trim();
+  const id = formatSearchId(rawId);
+  const amount = r2(+$('#amountInput').value || 0);
+  if (!id || amount <= 0) return toast('ID we mukdar dogry ýazyň!', true);
+  if (isBanned(id)) return toast('Bu ulanyjy banly / bloklanan!', true);
+
+  $('#loading').classList.add('show');
+  try {
+    let user = currentUser && currentUser.id === id ? currentUser : await searchUser(id);
+    if (!user) { $('#loading').classList.remove('show'); return; }
+
+    let newBal = r2((user.balance || 0) + (isDeposit ? amount : -amount));
+    if (newBal < 0) newBal = 0;
+
+    const { error } = await supabaseClient.from('users').update({ balance: newBal }).eq('id', id);
+    $('#loading').classList.remove('show');
+    if (error) return toast('Ýalňyşlyk ýüze çykdy!', true);
+
+    currentUser.balance = newBal;
+    showProfile(currentUser);
+    addNotif((isDeposit ? '+' : '−') + amount.toFixed(2) + ' TMT → ' + id, id);
+    toast(isDeposit ? 'Balans goşuldy!' : 'Balans aýryldy!');
+    loadStats();
+  } catch (e) {
+    $('#loading').classList.remove('show');
+    toast('Baglanyş ýalňyşlygy!', true);
+  }
+}
+$('#btnDeposit').onclick = () => changeBalance(true);
+$('#btnWithdraw').onclick = () => changeBalance(false);
+
+$('#btnTempBan').onclick = () => {
+  const id = formatSearchId($('#userIdInput').value);
+  if (!id) return toast('ID ýazyň!', true);
+  const hours = +$('#banHours').value;
+  if (hours === 0) {
+    bannedUsers[id] = 0;
+    addNotif('🚫 Hemişelik blok: ' + id, id);
+    toast('Hemişelik bloklandy!');
+  } else {
+    const until = Date.now() + hours * 60 * 60 * 1000;
+    bannedUsers[id] = until;
+    addNotif('⏱ ' + hours + ' sagat ban: ' + id, id);
+    toast(hours + ' sagatlyk ban berildi!');
+  }
+  localStorage.setItem('admin_banned', JSON.stringify(bannedUsers));
+  if (currentUser && currentUser.id === id) showProfile(currentUser);
+  loadStats();
+};
+
+$('#btnBlock').onclick = () => {
+  const id = formatSearchId($('#userIdInput').value);
+  if (!id) return toast('ID ýazyň!', true);
+  bannedUsers[id] = 0;
+  localStorage.setItem('admin_banned', JSON.stringify(bannedUsers));
+  addNotif('🚫 Hemişelik blok: ' + id, id);
+  toast('Hemişelik bloklandy!');
+  if (currentUser && currentUser.id === id) showProfile(currentUser);
+  loadStats();
+};
+
+$('#btnUnblock').onclick = () => {
+  const id = formatSearchId($('#userIdInput').value);
+  if (!id) return toast('ID ýazyň!', true);
+  if (!(id in bannedUsers)) return toast('Bu ulanyjy banly däl!', true);
+  delete bannedUsers[id];
+  localStorage.setItem('admin_banned', JSON.stringify(bannedUsers));
+  addNotif('✅ Ban/Blok aýryldy: ' + id, id);
+  toast('Ban / Blok aýryldy!');
+  if (currentUser && currentUser.id === id) showProfile(currentUser);
+  loadStats();
+};
+
+$('#btnBroadcast').onclick = async () => {
+  const text = $('#broadcastText').value.trim();
+  if (!text) return toast('Tekst ýazyň!', true);
+
+  const payload = {
+    message: text,
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+  };
+
+  localStorage.setItem('tt_broadcast', JSON.stringify(payload));
+  try {
+    await supabaseClient.from('broadcasts').upsert({ id: 1, ...payload });
+  } catch(e) {}
+
+  addNotif('📢 Bildirim ugradyldy: "' + text.substring(0, 40) + '..."');
+  toast('Bildirim ugradyldy! (5 sek görüner)');
+  $('#broadcastText').value = '';
+};
+
+function addNotif(text, userId) {
+  notifLog.unshift({ text, userId, time: new Date().toLocaleString('tk-TM') });
+  if (notifLog.length > 60) notifLog.pop();
+  localStorage.setItem('admin_notifs', JSON.stringify(notifLog));
+  renderNotifs();
+}
+function addActivity(text, userId) {
+  activityLog.unshift({ text, userId, time: new Date().toLocaleString('tk-TM') });
+  if (activityLog.length > 80) activityLog.pop();
+  localStorage.setItem('admin_activity', JSON.stringify(activityLog));
+  renderActivity();
+}
+
+function renderNotifs() {
+  const list = $('#notifList');
+  if (!notifLog.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--mut);padding:16px;">Häzirlikçe habar ýok</div>';
+    return;
+  }
+  list.innerHTML = notifLog.map(n => 
+    '<div class="list-item" data-id="' + (n.userId || '') + '"><b>' + n.text + '</b><div class="list-time">' + n.time + '</div></div>'
+  ).join('');
+  list.querySelectorAll('.list-item').forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.id;
+      if (id) { $('#userIdInput').value = id; searchUser(id); }
+    };
+  });
+}
+
+function renderActivity() {
+  const list = $('#activityList');
+  if (!activityLog.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--mut);padding:16px;">Häzirlikçe ýazgy ýok</div>';
+    return;
+  }
+  list.innerHTML = activityLog.map(n => 
+    '<div class="list-item" data-id="' + (n.userId || '') + '"><b>' + n.text + '</b><div class="list-time">' + n.time + '</div></div>'
+  ).join('');
+  list.querySelectorAll('.list-item').forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.id;
+      if (id) { $('#userIdInput').value = id; searchUser(id); }
+    };
+  });
+}
+
+async function loadStats() {
+  try {
+    const { data } = await supabaseClient.from('users').select('balance');
+    if (data) {
+      $('#statUsers').textContent = data.length;
+      const total = data.reduce((s, u) => s + (Number(u.balance) || 0), 0);
+      $('#statBal').textContent = r2(total).toFixed(0);
+    }
+    $('#statBlocked').textContent = Object.keys(bannedUsers).filter(id => isBanned(id)).length;
+  } catch(e) {}
+}
+
+let knownIds = new Set();
+async function checkActivity() {
+  try {
+    const { data } = await supabaseClient.from('users').select('id, phone, region, name').order('id', { ascending: false }).limit(15);
+    if (!data) return;
+    data.forEach(u => {
+      if (!knownIds.has(u.id)) {
+        knownIds.add(u.id);
+        addActivity('🆕 Täze / Giriş: ' + (u.phone || u.id) + ' (' + (u.region || '—') + ')', u.id);
+      }
+    });
+  } catch(e) {}
+}
+
+function startPolling() {
+  checkActivity();
+  setInterval(checkActivity, 10000);
+  setInterval(loadStats, 15000);
+}
+
+$('#btnRefreshAll').onclick = () => {
+  loadStats();
+  loadFinancialAndProfiles();
+  if (currentUser) searchUser(currentUser.id);
+  toast('Täzelendi ✓');
+  $('#sideOverlay').classList.remove('open');
+};
+$('#btnClearNotifs').onclick = () => {
+  notifLog = []; activityLog = [];
+  localStorage.setItem('admin_notifs', '[]');
+  localStorage.setItem('admin_activity', '[]');
+  renderNotifs(); renderActivity();
+  toast('Arassalandy');
+  $('#sideOverlay').classList.remove('open');
+};
+$('#btnExport').onclick = () => {
+  const blob = new Blob([JSON.stringify({ banned: bannedUsers, notifs: notifLog, activity: activityLog }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'admin_export.json';
+  a.click();
+  $('#sideOverlay').classList.remove('open');
+};
+$('#btnLogout').onclick = () => location.reload();
+</script>
+</body>
+</html>
+
+<script>
+
+</script>
+</body>
+</html>
